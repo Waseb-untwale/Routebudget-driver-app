@@ -20,6 +20,7 @@ import Profile from './src/screens/Profile';
 import Map from "./src/screens/Animation"
 import OdometerReading from './src/screens/OdometerReading';
 import CabAssing from './src/screens/CabAssing';
+import CustomerDetailScreen from './src/screens/CustomerDetailScreen';
 
 export type RootStackParamList = {
   Login: undefined;
@@ -114,6 +115,10 @@ const App = () => {
             <Stack.Screen 
               name="Location" 
               component={LocationScreen} 
+            />
+            <Stack.Screen
+              name="Customer"
+              component={CustomerDetailScreen}
             />
              <Stack.Screen 
               name="Odometer" 

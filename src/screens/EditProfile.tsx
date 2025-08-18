@@ -189,7 +189,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
       if (profileData.vehicleNo) payload.vehicleNo = profileData.vehicleNo;
 
       const response = await axios.put(
-        "http://192.168.1.34:5000/api/assignCab/profile",
+        "http://192.168.183.163:5000/api/assignCab/profile",
         payload,
         {
           headers: {
@@ -230,7 +230,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
         focusedField === fieldKey && styles.inputWrapperFocused,
         errors[fieldKey] && styles.inputWrapperError
       ]}>
-        {icon && <MaterialIcons name={icon} size={20} color={focusedField === fieldKey ? "#007bff" : "#888"} style={styles.inputIcon} />}
+        {icon && <MaterialIcons name={icon} size={20} color={focusedField === fieldKey ? "#FFC107" : "#888"} style={styles.inputIcon} />}
         <TextInput
           style={[styles.input, multiline && styles.textArea]}
           placeholder={placeholder}
@@ -256,7 +256,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
 
   return (
     <>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" backgroundColor="#FFC107" />
       <KeyboardAvoidingView 
         style={{ flex: 1 }} 
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -274,7 +274,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
               activeOpacity={0.7}
             >
               <LinearGradient
-                colors={['#007bff', '#0056b3']}
+                colors={['#FFC107', '#FFB300']}
                 style={styles.backButtonGradient}
               >
                 <MaterialIcons name="arrow-back" size={24} color="#fff" />
@@ -298,7 +298,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
                   style={styles.profileImage}
                 />
                 <LinearGradient
-                  colors={['#007bff', '#0056b3']}
+                  colors={['#FFC107', '#FFB300']}
                   style={styles.cameraIcon}
                 >
                   <MaterialIcons name="photo-camera" size={20} color="white" />
@@ -319,7 +319,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Full Name</Text>
               <View style={[styles.inputWrapper, { flexDirection: 'row', alignItems: 'center' }]}>
-                <MaterialIcons name="person" size={20} color="#007bff" style={styles.inputIcon} />
+                <MaterialIcons name="person" size={20} color="#FFC107" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Enter your full name"
@@ -339,7 +339,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
                 style={styles.dateInput}
                 activeOpacity={0.7}
               >
-                <MaterialIcons name="calendar-today" size={20} color="#007bff" />
+                <MaterialIcons name="calendar-today" size={20} color="#FFC107" />
                 <Text style={[styles.dateText, !profileData.dob && styles.placeholderText]}>
                   {profileData.dob || "Select date of birth"}
                 </Text>
@@ -362,7 +362,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Email Address</Text>
               <View style={[styles.inputWrapper, { flexDirection: 'row', alignItems: 'center' }]}>
-                <MaterialIcons name="email" size={20} color="#007bff" style={styles.inputIcon} />
+                <MaterialIcons name="email" size={20} color="#FFC107" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Enter your email"
@@ -380,7 +380,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Contact Number</Text>
               <View style={[styles.inputWrapper, { flexDirection: 'row', alignItems: 'center' }]}>
-                <MaterialIcons name="phone" size={20} color="#007bff" style={styles.inputIcon} />
+                <MaterialIcons name="phone" size={20} color="#FFC107" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Enter 10-digit mobile number"
@@ -398,7 +398,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Address</Text>
               <View style={[styles.inputWrapper, { flexDirection: 'row', alignItems: 'flex-start' }]}>
-                <MaterialIcons name="location-on" size={20} color="#007bff" style={[styles.inputIcon, { marginTop: 15 }]} />
+                <MaterialIcons name="location-on" size={20} color="#FFC107" style={[styles.inputIcon, { marginTop: 15 }]} />
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   placeholder="Enter your complete address"
@@ -416,7 +416,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>Aadhar Number</Text>
               <View style={[styles.inputWrapper, { flexDirection: 'row', alignItems: 'center' }]}>
-                <MaterialIcons name="credit-card" size={20} color="#007bff" style={styles.inputIcon} />
+                <MaterialIcons name="credit-card" size={20} color="#FFC107" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Enter 12-digit Aadhar number"
@@ -434,7 +434,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
             <View style={styles.inputContainer}>
               <Text style={styles.label}>License Number</Text>
               <View style={[styles.inputWrapper, { flexDirection: 'row', alignItems: 'center' }]}>
-                <MaterialIcons name="drive-eta" size={20} color="#007bff" style={styles.inputIcon} />
+                <MaterialIcons name="drive-eta" size={20} color="#FFC107" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Enter driving license number"
@@ -456,7 +456,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
               style={styles.saveButtonContainer}
             >
               <LinearGradient
-                colors={isLoading ? ['#ccc', '#999'] : ['#007bff', '#0056b3']}
+                colors={isLoading ? ['#ccc', '#999'] : ['#FFC107', '#FFB300']}
                 style={styles.saveButton}
               >
                 {isLoading ? (
@@ -478,7 +478,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
 
         {/* Footer */}
         <LinearGradient 
-          colors={['#00529B', '#003B7A']} 
+          colors={['#fbfaf6ff', '#f8f4eaff']} 
           start={{ x: 0, y: 0 }} 
           end={{ x: 1, y: 0 }} 
           style={styles.footerContainer}
@@ -493,7 +493,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#FFFDE7",
   },
   scrollContent: {
     paddingBottom: 20,
@@ -504,7 +504,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 20,
     paddingVertical: 15,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFEF7",
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     alignItems: "center",
     paddingVertical: 30,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFEF7",
     marginBottom: 20,
   },
   imageWrapper: {
@@ -545,7 +545,7 @@ const styles = StyleSheet.create({
     borderWidth: 4,
     borderColor: "#fff",
     elevation: 8,
-    shadowColor: '#007bff',
+    shadowColor: '#FFC107',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -570,7 +570,7 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFEF7",
     marginHorizontal: 20,
     borderRadius: 16,
     padding: 24,
@@ -601,16 +601,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: "#e1e5e9",
+    borderColor: "#F5F5DC",
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFEF7",
     paddingHorizontal: 15,
     minHeight: 52,
   },
   inputWrapperFocused: {
-    borderColor: "#007bff",
+    borderColor: "#FFC107",
     elevation: 2,
-    shadowColor: '#007bff',
+    shadowColor: '#FFC107',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -637,9 +637,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1.5,
-    borderColor: "#e1e5e9",
+    borderColor: "#F5F5DC",
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#FFFEF7",
     paddingHorizontal: 15,
     paddingVertical: 16,
   },
@@ -667,7 +667,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
     elevation: 4,
-    shadowColor: '#007bff',
+    shadowColor: '#FFC107',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,

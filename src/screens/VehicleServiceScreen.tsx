@@ -1,95 +1,106 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  ScrollView, 
-  StyleSheet, 
-  Alert, 
-  SafeAreaView, 
-  StatusBar, 
-  Dimensions, 
-  PermissionsAndroid, 
-  Image, 
-  ActivityIndicator 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Alert,
+  SafeAreaView,
+  StatusBar,
+  Dimensions,
+  PermissionsAndroid,
+  Image,
+  ActivityIndicator,
+  Platform
 } from "react-native";
-import Icon from 'react-native-vector-icons/FontAwesome';
-import axios from "react-native-axios";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
-import { launchCamera, launchImageLibrary } from "react-native-image-picker";
-import Voice from '@react-native-voice/voice';
+import { launchCamera, launchImageLibrary, ImageLibraryOptions } from "react-native-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import LinearGradient from "react-native-linear-gradient";
 
 const { width } = Dimensions.get('window');
 
-const VehicleServiceScreen = ({ navigation }) => {
-  const [serviceType, setServiceType] = useState({});
+interface ServicingData {
+  _id: string;
+  cab: { cabNumber: string };
+  serviceDate: string;
+}
+
+interface VehicleServiceScreenProps {
+  navigation: any;
+}
+
+const VehicleServiceScreen: React.FC<VehicleServiceScreenProps> = ({ navigation }) => {
   const [serviceId, setServiceId] = useState("");
-  const [servicing, setServicing] = useState(null);
+  const [servicing, setServicing] = useState<ServicingData | null>(null);
   const [loading, setLoading] = useState(false);
   const [servicingCost, setServicingCost] = useState("");
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [meterReading, setMeterReading] = useState("");
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [errors, setErrors] = useState({
-    odometer: "",
-    serviceCenterName: "",
-    contactNumber: "",
-    image: ""
+    image: "",
+    servicingCost: ""
   });
-  // Store token in component state to avoid retrieving it multiple times
-  const [userToken, setUserToken] = useState(null);
-  const [userId, setUserId] = useState(null);
+  const [userToken, setUserToken] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get token and user ID once at component mount
     const initializeData = async () => {
       try {
         const token = await AsyncStorage.getItem("userToken");
-        const id = await AsyncStorage.getItem("userid");
-        
+
         if (token) {
           setUserToken(token);
-          setUserId(id);
-          fetchAssignmentData(token);
+          await fetchAssignmentData(token);
         }
       } catch (error) {
         console.error("Error initializing data:", error);
+        Alert.alert("Error", "Failed to initialize data. Please try again.");
       }
     };
-    
+
     initializeData();
   }, []);
 
-  // Separated fetch function for better organization
-  const fetchAssignmentData = async (token) => {
+  const fetchAssignmentData = async (token: string) => {
     try {
       setLoading(true);
-      
-      // Create optimized axios instance with timeout
       const axiosInstance = axios.create({
-        baseURL: "http://192.168.1.34:5000/api",
-        timeout: 5000, // 5 second timeout
+        baseURL: "http://192.168.183.163:5000/api",
+        timeout: 5000,
         headers: { Authorization: `Bearer ${token}` }
       });
-      
+
       const response = await axiosInstance.get("/servicing/my-assignments");
-      
+
+      console.log("servicing response:", response.data);
+
       if (response.data.services && response.data.services.length > 0) {
-        setServiceId(response.data.services[0]._id);
+        console.log("Service found:", response.data.services[0].CabsDetail?.cabNumber);
+        setServiceId(response.data.services[0].id);
         setServicing(response.data.services[0]);
+      } else {
+        // Clear data if no services found
+        setServiceId("");
+        setServicing(null);
+        console.log("No services found");
       }
     } catch (error) {
       console.error("Assignment fetch error:", error);
+      // Clear data on error
+      setServiceId("");
+      setServicing(null);
       Alert.alert("Error", "Failed to fetch service assignment data");
     } finally {
       setLoading(false);
     }
   };
 
-  const requestCameraPermission = async () => {
+  const requestCameraPermission = async (): Promise<boolean> => {
     if (Platform.OS !== 'android') return true;
-    
+
     try {
       const granted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.CAMERA,
@@ -113,50 +124,53 @@ const VehicleServiceScreen = ({ navigation }) => {
       return;
     }
 
-    // Optimized options for faster image processing
-    const options = {
+    const options: ImageLibraryOptions = {
       mediaType: "photo",
-      maxWidth: 600,    // Reduced from 1200
-      maxHeight: 600,   // Reduced from 1200
-      quality: 0.5,     // Reduced from 0.8 for faster upload
+      maxWidth: 600,
+      maxHeight: 600,
+      quality: 0.5,
       includeBase64: false,
       cameraType: 'back'
     };
 
     launchCamera(options, (response) => {
       if (response.didCancel) {
-        // User cancelled
+        return;
       } else if (response.errorCode) {
         console.error("Camera error:", response.errorCode, response.errorMessage);
+        Alert.alert("Error", "Failed to capture image. Please try again.");
       } else if (response.assets && response.assets.length > 0) {
-        setUploadedImage(response.assets[0].uri);
-        setErrors({ ...errors, image: null });
+        setUploadedImage(response.assets[0].uri || null);
+        setErrors(prev => ({ ...prev, image: "" }));
       }
     });
   };
 
   const openGallery = async () => {
-    // Optimized options for faster image processing
-    const options = { 
-      mediaType: 'photo', 
-      maxWidth: 600,    // Reduced from 1200
-      maxHeight: 600,   // Reduced from 1200
-      quality: 0.5,     // Reduced from 0.8 for faster upload
+    const options: ImageLibraryOptions = {
+      mediaType: 'photo',
+      maxWidth: 600,
+      maxHeight: 600,
+      quality: 0.5,
       includeBase64: false
     };
-    
+
     try {
       const result = await launchImageLibrary(options);
-      if (result.assets && result.assets[0]) {
-        setUploadedImage(result.assets[0].uri);
-        setErrors({ ...errors, image: null });
+      if (result.didCancel) {
+        return;
+      } else if (result.errorCode) {
+        console.error("Gallery error:", result.errorCode);
+        Alert.alert("Error", "Failed to select image from gallery. Please try again.");
+      } else if (result.assets && result.assets.length > 0) {
+        setUploadedImage(result.assets[0].uri || null);
+        setErrors(prev => ({ ...prev, image: "" }));
       }
     } catch (error) {
       console.error("Gallery error:", error);
+      Alert.alert("Error", "Failed to select image from gallery. Please try again.");
     }
   };
-
-  
 
   const selectImage = () => {
     Alert.alert(
@@ -171,90 +185,123 @@ const VehicleServiceScreen = ({ navigation }) => {
     );
   };
 
-  const validateForm = () => {
+  const validateForm = (): boolean => {
     let isValid = true;
-    const newErrors = {...errors};
-    
+    const newErrors = { image: "", servicingCost: "" };
+
     if (!servicingCost || servicingCost.trim() === '') {
-      newErrors.serviceCenterName = 'Please enter the total amount';
+      newErrors.servicingCost = 'Please enter the total amount';
       isValid = false;
     } else if (isNaN(Number(servicingCost)) || Number(servicingCost) <= 0) {
-      newErrors.serviceCenterName = 'Please enter a valid amount';
+      newErrors.servicingCost = 'Please enter a valid amount';
       isValid = false;
-    } else {
-      newErrors.serviceCenterName = '';
     }
-    
+
     if (!uploadedImage) {
       newErrors.image = 'Please upload a receipt image';
       isValid = false;
-    } else {
-      newErrors.image = '';
     }
-    
+
     setErrors(newErrors);
     return isValid;
   };
- 
+
   const handleSubmit = async () => {
-    // Quick validation before proceeding
     if (!validateForm()) {
+      Alert.alert("Validation Error", "Please fill all required fields correctly");
       return;
     }
-    
+
     if (!serviceId) {
       Alert.alert("Error", "No service assignment found");
       return;
     }
-  
+
     setLoading(true);
     try {
-      // Pre-prepare image data
-      const imageData = uploadedImage ? {
-        uri: uploadedImage,
-        type: "image/jpeg",
-        name: "receipt.jpg",
-      } : null;
-      
-      // Build form data efficiently
+      // Create FormData for multipart/form-data submission
       const formData = new FormData();
-      formData.append("servicingCost", servicingCost);
-      if (imageData) {
-        formData.append("receiptImage", imageData);
-      }
       
-      // Use cached token if available, otherwise fetch it
+      // Add servicingAmount as text field
+      formData.append("servicingAmount", servicingCost);
+      
+      // Add image file if available
+      if (uploadedImage) {
+        const imageData = {
+          uri: uploadedImage,
+          type: "image/jpeg", // or detect mime type from file extension
+          name: `receipt_${Date.now()}.jpg`,
+        };
+        formData.append("receiptImage", imageData as any);
+      }
+
+      // Log FormData contents for debugging
+      console.log("FormData being sent:");
+      console.log("- servicingAmount:", servicingCost);
+      console.log("- receiptImage:", uploadedImage ? "Image attached" : "No image");
+
       const token = userToken || await AsyncStorage.getItem("userToken");
-  
-      // Create optimized axios instance with timeout and proper headers
+      if (!token) {
+        throw new Error("Authentication token not found");
+      }
+
+      // Create axios instance with proper multipart headers
       const axiosInstance = axios.create({
-        baseURL: "http://192.168.1.34:5000/api",
-        timeout: 15000, // 15 second timeout for image upload
+        baseURL: "http://192.168.183.163:5000/api",
+        timeout: 15000,
         headers: {
           "Content-Type": "multipart/form-data",
           "Authorization": `Bearer ${token}`
         }
       });
-      
-      // Make the API request
-      const res = await axiosInstance.put(
-        `/servicing/update/${serviceId}`,
-        formData
-      );
-     
-      Alert.alert("Success", "Service data submitted successfully!", [
-        {
-          text: "OK",
-          onPress: () => navigation.navigate("Home"),
-        },
-      ]);
-      
-      // Reset form
-      setServicingCost("");
-      setUploadedImage(null);
-    } catch (error) {
+
+      console.log(`Submitting to: /servicing/update/${serviceId}`);
+
+      const response = await axiosInstance.put(`/servicing/update/${serviceId}`, formData);
+
+      console.log("Response status:", response.status);
+      console.log("Response data:", response.data);
+
+      if (response.status === 200 || response.status === 201) {
+        Alert.alert("Success", "Service data submitted successfully!", [
+          {
+            text: "OK",
+            onPress: async () => {
+              // Reset form fields
+              setServicingCost("");
+              setUploadedImage(null);
+              setErrors({ image: "", servicingCost: "" });
+              
+              // Refresh data to check if service is removed from list
+              await fetchAssignmentData(token);
+              
+              // Navigate back to home
+              navigation.navigate("Home");
+            },
+          },
+        ]);
+      } else {
+        throw new Error(`Unexpected response status: ${response.status}`);
+      }
+    } catch (error: any) {
       console.error("Submission error:", error);
-      Alert.alert("Error", "Failed to submit service data.");
+      console.error("Error response:", error.response?.data);
+      
+      let errorMessage = "Failed to submit service data. Please try again.";
+
+      if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+        errorMessage = "Request timed out. Please check your internet connection and try again.";
+      } else if (error.response?.status === 413) {
+        errorMessage = "Image file is too large. Please try a smaller image.";
+      } else if (error.response?.status === 401) {
+        errorMessage = "Session expired. Please login again.";
+      } else if (error.response?.status >= 500) {
+        errorMessage = "Server error. Please try again later.";
+      } else if (!error.response && error.message.includes('Network')) {
+        errorMessage = "Network error. Please check your internet connection.";
+      }
+
+      Alert.alert("Error", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -263,12 +310,11 @@ const VehicleServiceScreen = ({ navigation }) => {
   const handleBackPress = () => {
     navigation.navigate("Home");
   };
-  
-  // Show loading state
+
   if (loading && !servicing) {
     return (
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar backgroundColor="#0277bd" />
+        <StatusBar backgroundColor="#FFA726" barStyle="light-content" />
         <View style={styles.appHeader}>
           <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
             <MaterialIcons name="arrow-back" size={24} color="#fff" />
@@ -277,7 +323,7 @@ const VehicleServiceScreen = ({ navigation }) => {
           <View style={styles.headerRightPlaceholder} />
         </View>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0277bd" />
+          <ActivityIndicator size="large" color="#FFA726" />
           <Text style={styles.loadingText}>Loading service data...</Text>
         </View>
       </SafeAreaView>
@@ -286,382 +332,311 @@ const VehicleServiceScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar backgroundColor="#0277bd" />
+      <StatusBar backgroundColor="#FFA726" barStyle="light-content" />
       <View style={styles.appHeader}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
-         <MaterialIcons name="arrow-back" size={24} color="#fff" />
+        <TouchableOpacity style={styles.backButton}>
+          <MaterialIcons name="arrow-back" size={24} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Schedule Service</Text>
         <View style={styles.headerRightPlaceholder} />
       </View>
 
       {serviceId ? (
-        <ScrollView style={styles.container}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
           <View style={styles.header}>
-            <Icon name="car" size={30} color="#4A90E2" />
+            <MaterialIcons name="car-repair" size={30} color="#FFA726" />
             <View style={styles.headerText}>
-              <Text style={styles.title}>{servicing?.cab?.cabNumber}</Text>
+              <Text style={styles.title}>{servicing?.CabsDetail?.cabNumber || "N/A"}</Text>
             </View>
           </View>
 
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>Service Schedule</Text>
+            <Text style={styles.sectionTitle}>
+              <MaterialIcons name="schedule" size={18} color="#FFA726" /> Service Schedule
+            </Text>
 
             <Text style={styles.label}>Last Service Date</Text>
             <View style={[styles.readOnlyContainer, styles.inputServiceDate]}>
               <Text style={styles.readOnlyText}>
-                {servicing?.serviceDate ? new Date(servicing.serviceDate).toLocaleDateString('en-GB', {
-                  day: '2-digit',
-                  month: 'long',
-                  year: 'numeric',
-                }) : 'N/A'}
+                {servicing?.serviceDate
+                  ? new Date(servicing.serviceDate).toLocaleDateString('en-GB', {
+                    day: '2-digit',
+                    month: 'long',
+                    year: 'numeric',
+                  })
+                  : 'N/A'}
               </Text>
-              <Icon name="lock" size={16} color="#4B5563" style={styles.lockIcon} />
+              <MaterialIcons name="lock" size={16} color="#FFA726" style={styles.lockIcon} />
             </View>
           </View>
 
-          <TouchableOpacity
-            style={[styles.uploadContainer, errors.image && styles.inputError]}
-            onPress={selectImage}
-            activeOpacity={0.8}
-          >
-            {uploadedImage ? (
-              <View style={styles.imagePreviewContainer}>
-                <Image source={{ uri: uploadedImage }} style={styles.previewImage} />
-                <TouchableOpacity style={styles.changeImageButton} onPress={selectImage}>
-                  <Text style={styles.changeImageText}>Change</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <>
-                <View style={styles.uploadCircle}>
-                  <Icon name="upload" size={24} color="#ffffff" />
-                </View>
-                <Text style={styles.uploadText}>Tap to upload Servicing receipt image</Text>
-                {errors.image && <Text style={styles.errorText}>{errors.image}</Text>}
-              </>
-            )}
-          </TouchableOpacity>
-
           <View style={styles.card}>
-            <Text style={styles.label}>Enter Total Amount <Text style={styles.required}>*</Text></Text>
-            <TextInput
-              placeholder="Enter Amount"
-              placeholderTextColor="#9e9e9e"
-              keyboardType="numeric"
-              style={[
-                styles.input,
-                styles.inputServiceCenter,
-                errors.serviceCenterName ? styles.inputError : null
-              ]}
-              value={servicingCost}
-              onChangeText={(text) => setServicingCost(text)}
-            />
-            {errors.serviceCenterName ? (
-              <Text style={styles.errorText}>
-                <Icon name="alert-circle-outline" size={14} color="#EF4444" /> {errors.serviceCenterName}
-              </Text>
-            ) : null}
-            
-            {errors.odometer ? (
-              <Text style={styles.errorText}>
-                <Icon name="alert-circle-outline" size={14} color="#EF4444" /> {errors.odometer}
-              </Text>
-            ) : null}
+            <Text style={styles.sectionTitle}>
+              <MaterialIcons name="receipt" size={18} color="#FFA726" /> Upload Receipt
+            </Text>
+            <TouchableOpacity
+              style={[styles.uploadContainer, errors.image && styles.inputError]}
+              onPress={selectImage}
+              activeOpacity={0.8}
+            >
+              {uploadedImage ? (
+                <View style={styles.imagePreviewContainer}>
+                  <Image source={{ uri: uploadedImage }} style={styles.previewImage} />
+                  <TouchableOpacity style={styles.changeImageButton} onPress={selectImage}>
+                    <MaterialIcons name="camera-alt" size={14} color="#fff" />
+                    <Text style={styles.changeImageText}>Change</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <>
+                  <View style={styles.uploadCircle}>
+                    <MaterialIcons name="camera-alt" size={24} color="#ffffff" />
+                  </View>
+                  <Text style={styles.uploadText}>Upload Receipt</Text>
+                </>
+              )}
+            </TouchableOpacity>
+            {errors.image && <Text style={styles.errorText}>{errors.image}</Text>}
           </View>
 
-          <TouchableOpacity 
-            style={styles.submitButton} 
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>
+              <MaterialIcons name="currency-rupee" size={18} color="#FFA726" /> Service Cost
+            </Text>
+            <Text style={styles.label}>
+              Total Amount <Text style={styles.required}>*</Text>
+            </Text>
+            <View style={[styles.textInputContainer, errors.servicingCost && styles.inputError]}>
+              <TextInput
+                placeholder="Enter Amount"
+                placeholderTextColor="#999"
+                keyboardType="decimal-pad"
+                style={styles.input}
+                value={servicingCost}
+                onChangeText={(text) => {
+                  const numericText = text.replace(/[^0-9.]/g, "");
+                  setServicingCost(numericText);
+                  setErrors(prev => ({ ...prev, servicingCost: "" }));
+                }}
+              />
+            </View>
+            {errors.servicingCost && <Text style={styles.errorText}>{errors.servicingCost}</Text>}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.submitButton, loading && styles.submitButtonDisabled]}
             onPress={handleSubmit}
             disabled={loading}
+            activeOpacity={0.8}
           >
-            {loading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text style={styles.submitButtonText}>Submit</Text>
-            )}
+            <LinearGradient colors={["#FFA726", "#FF8F00"]} style={styles.submitGradient}>
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <MaterialIcons name="check" size={16} color="#FFFFFF" style={styles.submitIcon} />
+                  <Text style={styles.submitText}>Submit</Text>
+                </>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
+          <View style={styles.bottomPadding} />
         </ScrollView>
       ) : (
         <View style={styles.noCabContainer}>
-          <Text style={styles.noCabText}>No cab assigned to you for servicing.</Text>
+          <MaterialIcons name="info" size={48} color="#FFA726" />
+          <Text style={styles.noCabText}>No service assignments found</Text>
+          <Text style={styles.noCabSubText}>All your servicing tasks have been completed.</Text>
         </View>
       )}
     </SafeAreaView>
   );
 };
 
-
-
-
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#FFFFFF"
   },
-
   appHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingVertical: 14,
-    backgroundColor: "#0277bd",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E5E7EB",
+    backgroundColor: "#FFA726",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 1,
     elevation: 2
   },
-
   backButton: {
     padding: 6,
   },
-
   headerTitle: {
     fontSize: 17,
     fontWeight: "600",
     color: "#fff"
   },
-
   headerRightPlaceholder: {
     width: 36,
   },
-
   container: {
     flex: 1,
-    backgroundColor: "#F5F7FA",
-    padding: 16
+    backgroundColor: "#FFFFFF",
   },
-
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+  bottomPadding: {
+    height: 20,
+  },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#E6EEFF",
+    backgroundColor: "#FFF8E1",
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#FFD54F",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1
   },
-
   headerText: {
     marginLeft: 12
   },
-
   title: {
     fontSize: 20,
     fontWeight: "700",
-    color: "#333F4D"
+    color: "#FFA726"
   },
-
-  subtitle: {
-    color: "#6B7280",
-    fontSize: 15
-  },
-
   card: {
     backgroundColor: "#FFFFFF",
     padding: 18,
     borderRadius: 12,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "#FFD54F",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.06,
     shadowRadius: 3,
     elevation: 2
   },
-
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#333F4D",
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FFA726",
     marginBottom: 16
   },
-
   label: {
     fontSize: 15,
-    color: "#4B5563",
-    marginBottom: 6,
-    fontWeight: "500"
+    color: "#FFA726",
+    marginBottom: 8,
+    fontWeight: "600"
   },
-
   required: {
-    color: "#EF4444",
+    color: "#f44336",
     fontWeight: "bold"
   },
-
+  textInputContainer: {
+    borderWidth: 1.5,
+    borderColor: "#FFD54F",
+    borderRadius: 8,
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 15,
+    elevation: 1,
+  },
   input: {
-    padding: 16,
-    borderRadius: 10,
-    fontSize: 16,
-    color: "#333F4D",
-    marginBottom: 5,
-    borderWidth: 0
+    height: 40,
+    fontSize: 15,
+    color: "#333",
   },
-
   inputError: {
-    borderWidth: 1,
-    borderColor: "#EF4444"
+    borderColor: "#f44336",
   },
-
   errorText: {
-    color: "#EF4444",
-    fontSize: 12,
-    marginBottom: 12,
-    marginLeft: 5
+    color: "#f44336",
+    fontSize: 11,
+    marginTop: 4,
   },
-
   readOnlyContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
-    borderRadius: 10,
+    borderRadius: 8,
     marginBottom: 16,
-    borderWidth: 0,
-    borderLeftWidth: 4,
-    borderLeftColor: "#9CA3AF"
+    borderWidth: 1.5,
+    borderColor: "#FFD54F",
+    backgroundColor: "#FFF8E1",
   },
-
   readOnlyText: {
-    fontSize: 16,
-    color: "#333F4D",
+    fontSize: 15,
+    color: "#333",
     fontWeight: "500"
   },
-
   lockIcon: {
     opacity: 0.7
   },
-
   inputServiceDate: {
-    backgroundColor: "#D1FAE5",
-    borderLeftColor: "#10B981"
-  },
-
-  inputDueDate: {
-    backgroundColor: "#E0E7FF",
-    borderLeftColor: "#6366F1"
-  },
-
-  inputOdometer: { backgroundColor: "#FEF3C7" }, // Yellow
-  inputServiceCenter: { backgroundColor: "#FDE2E2" }, // Red
-  inputLocation: { backgroundColor: "#E5E7EB" }, // Gray
-  inputContact: { backgroundColor: "#BEE3F8" }, // Light Blue
-
-  buttonContainer: {
-    flexDirection: "row",
-    marginTop: 8,
-    justifyContent: "space-between",
-    marginBottom: 8
-  },
-
-  button: {
-    flex: 1,
-    padding: 15,
-    borderRadius: 10,
-    backgroundColor: "#E5E7EB",
-    alignItems: "center",
-    marginHorizontal: 4
-  },
-
-  activeButton: {
-    backgroundColor: "#4CAF50"
-  },
-
-  buttonText: {
-    fontWeight: "600",
-    color: "#4B5563",
-    fontSize: 15
-  },
-
-  activeButtonText: {
-    color: "#FFFFFF"
-  },
-
-  historyItemContainer: {
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F3F4F6"
-  },
-
-  historyItem: {
-    fontSize: 15,
-    color: "#4B5563",
-    fontWeight: "500"
-  },
-
-  submitButton: {
-    backgroundColor: "#4A90E2",
-    padding: 18,
-    borderRadius: 12,
-    alignItems: "center",
-    marginTop: 8,
-    marginBottom: 32,
-    shadowColor: "#4A90E2",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3
-  },
-
-  submitButtonText: {
-    color: "#FFFFFF",
-    fontWeight: "700",
-    fontSize: 17
+    backgroundColor: "#FFF8E1",
+    borderColor: "#FFD54F"
   },
   uploadContainer: {
-    borderWidth: 1,
+    borderWidth: 2,
     borderStyle: "dashed",
-    borderColor: "#CBD5E0",
+    borderColor: "#FFD54F",
     borderRadius: 12,
-    padding: 25,
+    padding: 12,
     alignItems: "center",
-    backgroundColor: "#EEF2FF",
-    marginBottom: 25,
+    backgroundColor: "#FFF8E1",
+    marginBottom: 15,
   },
   uploadCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: "#4F46E5",
+    width: 35,
+    height: 35,
+    borderRadius: 25,
+    backgroundColor: "#FFA726",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 15,
-    shadowColor: "#4F46E5",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 4,
+    marginBottom: 12,
+    elevation: 3,
   },
   uploadText: {
-    fontSize: 16,
-    color: "#4F46E5",
-    fontWeight: "500",
-    textAlign: "center",
+    fontSize: 14,
+    color: "#FFA726",
+    fontWeight: "600",
   },
   previewImage: {
-    width: width * 0.7,
-    height: width * 0.7,
-    borderRadius: 12,
-    marginBottom: 10,
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  imagePreviewContainer: {
+    alignItems: "center",
+    width: "100%",
   },
   changeImageButton: {
-    marginTop: 10,
-    backgroundColor: '#4a56e2',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFA726",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   changeImageText: {
     color: "#FFFFFF",
-    fontWeight: "bold",
+    fontWeight: "600",
+    marginLeft: 4,
+    fontSize: 11,
   },
   noCabContainer: {
     flex: 1,
@@ -670,14 +645,55 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   noCabText: {
-    fontSize: 18,
-    color: '#666',
+    fontSize: 20,
+    color: '#FFA726',
     textAlign: 'center',
+    marginTop: 16,
+    fontWeight: '600',
   },
-  imagePreviewContainer: {
+  noCabSubText: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+  submitButton: {
+    height: 50,
+    borderRadius: 12,
+    overflow: "hidden",
+    marginTop: 10,
+  },
+  submitButtonDisabled: {
+    opacity: 0.7,
+  },
+  submitGradient: {
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     width: "100%",
+    height: "100%",
+    borderRadius: 12,
   },
+  submitIcon: {
+    marginRight: 6,
+  },
+  submitText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#FFA726",
+    fontWeight: "500"
+  }
 });
 
 export default VehicleServiceScreen;

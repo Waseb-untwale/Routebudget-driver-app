@@ -43,7 +43,7 @@ const CabAssign = () => {
       }
   
       // Updated API endpoint for free cabs
-      const res = await axios.get("http://192.168.1.34:5000/api/assigncab/driver/free-cabs", {
+      const res = await axios.get("http://192.168.183.163:5000/api/assigncab/driver/free-cabs", {
         headers: { Authorization: `Bearer ${token}` }
       }); 
       console.log("res",res)
@@ -86,39 +86,96 @@ const CabAssign = () => {
     }
   };
 
+  // const assignCab = async () => {
+  //   if (!selectedCabDetails) {
+  //     setMessage({ type: 'error', text: 'Please select a cab first' });
+  //     return;
+  //   }
+
+  //   setIsSubmitting(true);
+  //   setMessage({ type: '', text: '' });
+  
+  //   try {
+  //     const token = await AsyncStorage.getItem("userToken");
+  
+  //     if (!token) {
+  //       setMessage({ type: 'error', text: 'Authentication failed. Please login again.' });
+  //       setIsSubmitting(false);
+  //       return;
+  //     }
+  
+  //     const res = await axios.post(
+  //       "http://192.168.1.47:5000/api/assigncab/driver/cabassign",
+  //       {
+  //         cabNumber: selectedCabDetails.cabNumber,
+  //         assignedBy: selectedCabDetails.addedBy
+  //       },
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //           "Content-Type": "application/json"
+  //         }
+  //       }
+  //     );
+  
+  //     console.log("✅ Cab assigned successfully:", res.data);
+  //     setMessage({ type: 'success', text: `Cab ${selectedCabDetails.cabNumber} assigned successfully!` });
+  //     showToast(`Cab ${selectedCabDetails.cabNumber} assigned successfully!`);
+      
+  //     // Refresh the free cabs list after successful assignment
+  //     await getDriverData();
+      
+  //     // Reset selections
+  //     setSelectedCabNumber('');
+  //     setSelectedCabDetails(null);
+      
+  //   } catch (error) {
+  //     console.log("❌ Error assigning cab:", error.response?.data || error.message);
+  //     setMessage({ 
+  //       type: 'error', 
+  //       text: error.response?.data?.message || 'Failed to assign cab. Please try again.' 
+  //     });
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
+  
   const assignCab = async () => {
-    if (!selectedCabDetails) {
-      setMessage({ type: 'error', text: 'Please select a cab first' });
+  if (!selectedCabDetails) {
+    setMessage({ type: 'error', text: 'Please select a cab first' });
+    return;
+  }
+
+  setIsSubmitting(true);
+  setMessage({ type: '', text: '' });
+
+  try {
+    const token = await AsyncStorage.getItem("userToken");
+
+    if (!token) {
+      setMessage({ type: 'error', text: 'Authentication failed. Please login again.' });
+      setIsSubmitting(false);
       return;
     }
 
-    setIsSubmitting(true);
-    setMessage({ type: '', text: '' });
-  
-    try {
-      const token = await AsyncStorage.getItem("userToken");
-  
-      if (!token) {
-        setMessage({ type: 'error', text: 'Authentication failed. Please login again.' });
-        setIsSubmitting(false);
-        return;
-      }
-  
-      const res = await axios.post(
-        "http://192.168.1.34:5000/api/assigncab/driver/cabassign",
-        {
-          cabNumber: selectedCabDetails.cabNumber,
-          assignedBy: selectedCabDetails.addedBy
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
-          }
+    const res = await axios.post(
+      "http://192.168.183.163:5000/api/assigncab/driver/cabassign",
+      {
+        cabNumber: selectedCabDetails.cabNumber,
+        assignedBy: selectedCabDetails.addedBy  // This should be the admin/manager ID who added the cab
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json"
         }
-      );
-  
-      console.log("✅ Cab assigned successfully:", res.data);
+      }
+    );
+
+    console.log("✅ Cab assigned successfully:", res.data);
+    
+    // Handle PostgreSQL response structure
+    if (res.data.message === 'Cab assigned successfully' && res.data.assignment) {
       setMessage({ type: 'success', text: `Cab ${selectedCabDetails.cabNumber} assigned successfully!` });
       showToast(`Cab ${selectedCabDetails.cabNumber} assigned successfully!`);
       
@@ -128,17 +185,38 @@ const CabAssign = () => {
       // Reset selections
       setSelectedCabNumber('');
       setSelectedCabDetails(null);
-      
-    } catch (error) {
-      console.log("❌ Error assigning cab:", error.response?.data || error.message);
-      setMessage({ 
-        type: 'error', 
-        text: error.response?.data?.message || 'Failed to assign cab. Please try again.' 
-      });
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      throw new Error('Unexpected response format');
     }
-  };
+    
+  } catch (error) {
+    console.log("❌ Error assigning cab:", error.response?.data || error.message);
+    
+    // Handle specific PostgreSQL error messages
+    let errorMessage = 'Failed to assign cab. Please try again.';
+    
+    if (error.response?.data?.message) {
+      const serverMessage = error.response.data.message;
+      
+      // Handle common PostgreSQL constraint errors
+      if (serverMessage.includes('already has an active cab assigned')) {
+        errorMessage = 'You already have an active cab assigned. Please complete or end your current assignment first.';
+      } else if (serverMessage.includes('already assigned to another driver')) {
+        errorMessage = 'This cab is already assigned to another driver. Please refresh and select a different cab.';
+      } else if (serverMessage.includes('Cab not found')) {
+        errorMessage = 'Selected cab not found. Please refresh the cab list.';
+      } else {
+        errorMessage = serverMessage;
+      }
+    }
+    
+    setMessage({ type: 'error', text: errorMessage });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+  
+  
 
   const renderCabItem = ({ item, index }) => (
     <TouchableOpacity 
@@ -169,7 +247,7 @@ const CabAssign = () => {
         
         {loading ? (
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#00529B" />
+            <ActivityIndicator size="large" color="#ffc46dff" />
             <Text style={styles.loadingText}>Loading free cabs...</Text>
           </View>
         ) : (
@@ -256,7 +334,7 @@ const CabAssign = () => {
                       style={[styles.assignButton, isSubmitting && styles.assignButtonDisabled]}
                     >
                       <LinearGradient
-                        colors={isSubmitting ? ['#9ca3af', '#9ca3af'] : ['#00529B', '#003B7A']}
+                        colors={isSubmitting ? ['#9ca3af', '#9ca3af'] : ['#ffc46dff', '#ffc46dff']}
                         start={{ x: 0, y: 0 }}
                         end={{ x: 1, y: 0 }}
                         style={styles.assignButtonGradient}
@@ -313,14 +391,7 @@ const CabAssign = () => {
 
       {/* Footer at the bottom */}
       <View style={styles.footerWrapper} onLayout={onFooterLayout}>
-        <LinearGradient
-          colors={['#00529B', '#003B7A']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.footerContainer}
-        >
           <Footer />
-        </LinearGradient>
       </View>
     </View>
   );
@@ -343,7 +414,7 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#00529B',
+    color: '#ffc46dff',
     marginBottom: 24,
     textAlign: 'center',
   },
@@ -354,7 +425,7 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 10,
-    color: '#00529B',
+    color: '#ffc46dff',
     fontSize: 16,
   },
   noCabsContainer: {
@@ -370,7 +441,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   refreshButton: {
-    backgroundColor: '#00529B',
+    backgroundColor: '#ffc46dff',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 6,
@@ -394,7 +465,7 @@ const styles = StyleSheet.create({
   pickerTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#00529B',
+    color: '#ffc46dff',
     textAlign: 'center',
     paddingVertical: 10,
     borderBottomWidth: 1,
@@ -412,7 +483,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   pickerSelectedText: {
-    color: '#00529B',
+    color: '#ffc46dff',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -423,7 +494,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dropdownIconText: {
-    color: '#00529B',
+    color: '#ffc46dff',
     fontSize: 12,
   },
   iOSPickerWrapper: {
@@ -452,7 +523,7 @@ const styles = StyleSheet.create({
   modalHeaderText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#00529B',
+    color: '#ffc46dff',
     textAlign: 'center',
   },
   cabList: {
@@ -499,7 +570,7 @@ const styles = StyleSheet.create({
   detailsTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#00529B',
+    color: '#ffc46dff',
     marginBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e5e7eb',

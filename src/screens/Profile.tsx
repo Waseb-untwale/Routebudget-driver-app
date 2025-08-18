@@ -38,12 +38,12 @@ const Profile = ({navigation}) => {
       const userId = await AsyncStorage.getItem("userid");
   
       if (token) {
-        const response = await axios.get("http://192.168.1.34:5000/api/cabDetails/driver", {
+        const response = await axios.get("http://192.168.183.163:5000/api/cabDetails/driver", {
           headers: {
             Authorization: `Bearer ${token}`
           }
         });
-  
+         console.log("Response from",response.data)
         const driverDetail = response.data["Driver Detail"];  // New
         const cabAdmin = response.data["Cab Admin"];          // New
   
@@ -59,6 +59,37 @@ const Profile = ({navigation}) => {
     }
   };
   
+  const handleLogout = () => {
+    Alert.alert(
+      "Confirm Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Logout",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              // Clear all stored data
+              await AsyncStorage.multiRemove(['userToken', 'userid']);
+              
+              // Navigate to login screen or reset navigation stack
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }], // Replace 'Login' with your actual login screen name
+              });
+            } catch (error) {
+              console.log("Error during logout:", error);
+              Alert.alert("Error", "Failed to logout. Please try again.");
+            }
+          }
+        }
+      ]
+    );
+  };
 
   // Function to measure footer height
   const onFooterLayout = (event) => {
@@ -69,7 +100,7 @@ const Profile = ({navigation}) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1a3b6e" />
+        <ActivityIndicator size="large" color="#FFC107" />
         <Text style={styles.loadingText}>Loading driver profile...</Text>
       </View>
     );
@@ -78,7 +109,7 @@ const Profile = ({navigation}) => {
   if (!driverData) {
     return (
       <View style={styles.errorContainer}>
-         <StatusBar barStyle="dark-content" backgroundColor="#D0EFFF" />
+         <StatusBar barStyle="dark-content" backgroundColor="#FFFDE7" />
          
       
         <Text style={styles.errorText}>Loading ...</Text>
@@ -91,6 +122,7 @@ const Profile = ({navigation}) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFDE7" />
       <ScrollView 
         style={styles.scrollView} 
         contentContainerStyle={[
@@ -101,7 +133,7 @@ const Profile = ({navigation}) => {
         <View style={styles.header}>
           <View style={styles.coverPhoto}>
             <TouchableOpacity style={styles.backButton} onPress={()=>navigation.navigate("Home")}>
-              <Icon name="arrow-back" size={24} color="#fff" />
+              <Icon name="arrow-back" size={24} color="#333" />
             </TouchableOpacity>
           </View>
           
@@ -121,16 +153,16 @@ const Profile = ({navigation}) => {
         </View>
 
         <View style={styles.infoSection}>
-          <Card style={styles.card} elevation={2}>
+          <Card style={styles.card} elevation={3}>
             <Card.Content>
               <View style={styles.sectionTitleContainer}>
-                <Icon name="person" size={22} color="#6200ea" />
+                <Icon name="person" size={22} color="#FFB300" />
                 <Text style={styles.sectionTitle}>Personal Information</Text>
               </View>
               <Divider style={styles.divider} />
               
               <View style={styles.infoItem}>
-                <Icon name="email" size={20} color="#757575" />
+                <Icon name="email" size={20} color="#FFB300" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Email</Text>
                   <Text style={styles.infoValue}>{driverData?.email || "Not provided"}</Text>
@@ -138,7 +170,7 @@ const Profile = ({navigation}) => {
               </View>
               
               <View style={styles.infoItem}>
-                <Icon name="phone" size={20} color="#757575" />
+                <Icon name="phone" size={20} color="#FFB300" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Phone</Text>
                   <Text style={styles.infoValue}>{driverData?.phone || "Not provided"}</Text>
@@ -147,16 +179,16 @@ const Profile = ({navigation}) => {
             </Card.Content>
           </Card>
 
-          <Card style={styles.card} elevation={2}>
+          <Card style={styles.card} elevation={3}>
             <Card.Content>
               <View style={styles.sectionTitleContainer}>
-                <Icon name="badge" size={22} color="#6200ea" />
+                <Icon name="badge" size={22} color="#FFB300" />
                 <Text style={styles.sectionTitle}>Documents</Text>
               </View>
               <Divider style={styles.divider} />
               
               <View style={styles.infoItem}>
-                <MaterialCommunityIcons name="license" size={20} color="#757575" />
+                <MaterialCommunityIcons name="license" size={20} color="#FFB300" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>License Number</Text>
                   <Text style={styles.infoValue}>{driverData?.licenseNo || "Not provided"}</Text>
@@ -164,12 +196,29 @@ const Profile = ({navigation}) => {
               </View>
               
               <View style={styles.infoItem}>
-                <MaterialCommunityIcons name="card-account-details" size={20} color="#757575" />
+                <MaterialCommunityIcons name="card-account-details" size={20} color="#FFB300" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Aadhaar Number</Text>
                   <Text style={styles.infoValue}>{driverData?.adharNo || "Not provided"}</Text>
                 </View>
               </View>
+            </Card.Content>
+          </Card>
+
+          {/* Logout Card */}
+          <Card style={styles.card} elevation={3}>
+            <Card.Content>
+              <View style={styles.sectionTitleContainer}>
+                <Icon name="settings" size={22} color="#FFB300" />
+                <Text style={styles.sectionTitle}>Account Settings</Text>
+              </View>
+              <Divider style={styles.divider} />
+              
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+                <Icon name="logout" size={20} color="#E53E3E" />
+                <Text style={styles.logoutButtonText}>Logout</Text>
+                <Icon name="chevron-right" size={20} color="#E53E3E" />
+              </TouchableOpacity>
             </Card.Content>
           </Card>
         </View>
@@ -181,7 +230,7 @@ const Profile = ({navigation}) => {
         onLayout={onFooterLayout}
       >
          <LinearGradient 
-              colors={['#00529B', '#003B7A']} 
+              colors={['#f4f4f2ff', '#f1eee2ff']} 
               start={{ x: 0, y: 0 }} 
               end={{ x: 1, y: 0 }} 
               style={styles.footerContainer}
@@ -196,7 +245,6 @@ const Profile = ({navigation}) => {
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: "#f8f9fa",
   },
   scrollView: {
     flex: 1,
@@ -208,28 +256,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f8f9fa"
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: "#757575"
+    color: "#FFC107" // Amber color
   },
   errorContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
-    backgroundColor: "#f8f9fa"
   },
   errorText: {
     fontSize: 18,
     marginTop: 10,
     marginBottom: 20,
-    color: "#555"
+    color: "#333"
   },
   retryButton: {
-    backgroundColor: "#6200ea",
+    backgroundColor: "#FFC107",
     paddingHorizontal: 20
   },
   header: {
@@ -237,20 +283,29 @@ const styles = StyleSheet.create({
     marginBottom: 20
   },
   coverPhoto: {
-    backgroundColor: "#1a3b6e",
+    backgroundColor: "#ffc46dff", // Light yellow
     height: 150,
     width: "100%",
     borderBottomLeftRadius: 20,
-    borderBottomRightRadius: 20
+    borderBottomRightRadius: 20,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 5,
+    elevation: 5,
   },
   backButton: {
     margin: 10,
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(255,255,255,0.8)",
     justifyContent: "center",
-    alignItems: "center"
+    alignItems: "center",
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 3,
   },
   profileImageContainer: {
     position: "relative",
@@ -261,8 +316,12 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     borderWidth: 4,
-    borderColor: "#fff",
-    backgroundColor: "#f0f0f0"
+    borderColor: "#FFF",
+    backgroundColor: "#f0f0f0",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
   },
   driverName: {
     fontSize: 24,
@@ -272,19 +331,25 @@ const styles = StyleSheet.create({
   },
   driverRole: {
     fontSize: 16,
-    color: "#757575",
-    marginBottom: 15
+    marginBottom: 15,
+    fontWeight: "500"
   },
   editButton: {
-    backgroundColor: "#1a3b6e",
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-    marginTop: 5
+    backgroundColor: "#FFC107", // Yellow
+    paddingVertical: 10,
+    paddingHorizontal: 25,
+    borderRadius: 25,
+    marginTop: 5,
+    shadowColor: '#FFB300',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 5,
   },
   editButtonText: {
-    color: "#fff",
-    fontWeight: "bold"
+    color: "#333",
+    fontWeight: "bold",
+    fontSize: 16
   },
   infoSection: {
     paddingHorizontal: 16,
@@ -292,13 +357,21 @@ const styles = StyleSheet.create({
   },
   card: {
     marginBottom: 16,
-    borderRadius: 12,
+    borderRadius: 15,
     overflow: "hidden",
+    backgroundColor: "#FFFFFF", // Pure white for cards
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 6,
+    borderWidth: 1,
+    borderColor: "#FFFFFF", // Light yellow border
   },
   sectionTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10
+    marginBottom: 12,
+    paddingBottom: 5
   },
   sectionTitle: {
     fontSize: 18,
@@ -308,26 +381,44 @@ const styles = StyleSheet.create({
   },
   divider: {
     marginBottom: 15,
-    height: 1.5,
-    backgroundColor: "#e0e0e0",
+    height: 2, // Light yellow divider
   },
   infoItem: {
     flexDirection: "row",
     marginBottom: 15,
-    alignItems: "flex-start"
+    alignItems: "flex-start",
+    paddingVertical: 5
   },
   infoContent: {
     marginLeft: 15,
     flex: 1,
   },
   infoLabel: {
-    fontSize: 14,
-    color: "#757575"
+    fontSize: 14, // Amber color
+    fontWeight: "500"
   },
   infoValue: {
     fontSize: 16,
     color: "#333",
     marginTop: 2,
+    fontWeight: "400"
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: "#FFF5F5", // Light red background
+    borderWidth: 1,
+    borderColor: "#FED7D7", // Light red border
+  },
+  logoutButtonText: {
+    fontSize: 16,
+    color: "#E53E3E", // Red color
+    fontWeight: "600",
+    marginLeft: 12,
+    flex: 1,
   },
   footerWrapper: {
     width: '100%',
@@ -335,11 +426,12 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   footerContainer: {
-    shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 10,
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#FFFFFF",
   }
 });
 
