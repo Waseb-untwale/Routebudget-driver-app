@@ -38,7 +38,7 @@ const Profile = ({navigation}) => {
       const userId = await AsyncStorage.getItem("userid");
   
       if (token) {
-        const response = await axios.get("http://192.168.183.163:5000/api/cabDetails/driver", {
+        const response = await axios.get("https://api.routebudget.com/api/cabDetails/driver", {
           headers: {
             Authorization: `Bearer ${token}`
           }
@@ -106,17 +106,17 @@ const Profile = ({navigation}) => {
     );
   }
 
-  if (!driverData) {
-    return (
-      <View style={styles.errorContainer}>
-         <StatusBar barStyle="dark-content" backgroundColor="#FFFDE7" />
+  // if (!driverData) {
+  //   return (
+  //     <View style={styles.errorContainer}>
+  //        <StatusBar barStyle="dark-content" backgroundColor="#FFFDE7" />
          
       
-        <Text style={styles.errorText}>Loading ...</Text>
+  //       <Text style={styles.errorText}>Loading ...</Text>
       
-      </View>
-    );
-  }
+  //     </View>
+  //   );
+  // }
 
   const profileImage = driverData?.profileImage || "https://via.placeholder.com/100";
 

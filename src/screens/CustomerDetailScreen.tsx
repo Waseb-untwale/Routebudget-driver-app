@@ -15,6 +15,7 @@ import {
   Modal,
   PermissionsAndroid,
   Platform,
+  Linking, // Added Linking import for phone dialer functionality
 } from "react-native"
 import AsyncStorage from "@react-native-async-storage/async-storage"
 import axios from "react-native-axios"
@@ -534,7 +535,7 @@ const CustomerDetailScreen: React.FC<CustomerDetailScreenProps> = ({ onClose }) 
       const token = await AsyncStorage.getItem("userToken")
 
       if (token) {
-        const cabResponse = await axios.get("http://192.168.183.163:5000/api/assignCab/driver", {
+        const cabResponse = await axios.get("https://api.routebudget.com/api/assignCab/driver", {
           headers: { Authorization: `Bearer ${token}` },
         })
 
@@ -542,7 +543,7 @@ const CustomerDetailScreen: React.FC<CustomerDetailScreenProps> = ({ onClose }) 
           setCabNumber(cabResponse.data[0].CabsDetail.cabNumber || "")
         }
 
-        const tripResponse = await axios.get("http://192.168.183.163:5000/api/assignCab/driver/getassgnedcab", {
+        const tripResponse = await axios.get("https://api.routebudget.com/api/assignCab/driver/getassgnedcab", {
           headers: { Authorization: `Bearer ${token}` },
         })
 
@@ -646,6 +647,12 @@ const CustomerDetailScreen: React.FC<CustomerDetailScreenProps> = ({ onClose }) 
     }
   }
 
+  const handlePhonePress = () => {
+    if (tripData?.customerPhone) {
+      Linking.openURL(`tel:${tripData.customerPhone}`)
+    }
+  }
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -687,7 +694,11 @@ const CustomerDetailScreen: React.FC<CustomerDetailScreenProps> = ({ onClose }) 
                 <MaterialIcons name="phone" size={16} color="#92400E" />
                 <View style={styles.infoContent}>
                   <Text style={styles.infoLabel}>Phone Number</Text>
-                  <Text style={styles.infoValue}>{tripData?.customerPhone || "Not provided"}</Text>
+                  <TouchableOpacity onPress={handlePhonePress} disabled={!tripData?.customerPhone}>
+                    <Text style={[styles.infoValue, tripData?.customerPhone && styles.phoneNumber]}>
+                      {tripData?.customerPhone || "Not provided"}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             </View>
@@ -883,7 +894,7 @@ const CustomerDetailScreen: React.FC<CustomerDetailScreenProps> = ({ onClose }) 
         <View style={styles.fixedButtonContainer}>
           <TouchableOpacity style={styles.trackButton} onPress={handleTrackLocation} activeOpacity={0.8}>
             <MaterialIcons name="location-on" size={20} color="#ffffff" />
-            <Text style={styles.trackButtonText}>Track Location</Text>
+            <Text style={styles.trackButtonText}>Navigation</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -1460,6 +1471,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEF3C7",
     marginHorizontal: 8,
     marginVertical: 4,
+  },
+  phoneNumber: {
+    color: "#2563EB", // Added blue color to indicate clickable phone number
+    textDecorationLine: "underline",
   },
 })
 

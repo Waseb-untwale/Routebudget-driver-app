@@ -1159,7 +1159,7 @@ const ExpenseTracker: React.FC = () => {
     try {
       const token = await AsyncStorage.getItem("userToken")
       if (token) {
-        const response = await axios.get("http://192.168.183.163:5000/api/assignCab/driver", {
+        const response = await axios.get("https://api.routebudget.com/api/assignCab/driver", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -1316,7 +1316,7 @@ const ExpenseTracker: React.FC = () => {
 
       if (token && assignedCabId) {
         const res = await axios.put(
-          `http://192.168.183.163:5000/api/assigncab/complete/${assignedCabId}`,
+          `https://api.routebudget.com/api/assigncab/complete/${assignedCabId}`,
           {},
           {
             headers: {

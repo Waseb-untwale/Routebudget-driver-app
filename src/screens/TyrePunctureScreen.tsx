@@ -891,7 +891,7 @@ const TyrePunctureScreen: React.FC<TyrePunctureScreenProps> = ({ onClose }) => {
 
       if (token) {
         const response = await axios.get(
-          "http://192.168.183.163:5000/api/assignCab/driver",
+          "https://api.routebudget.com/api/assignCab/driver",
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -1058,7 +1058,7 @@ const TyrePunctureScreen: React.FC<TyrePunctureScreenProps> = ({ onClose }) => {
       };
 
       const response = await axios.patch(
-        "http://192.168.183.163:5000/api/assigncab/update-trip",
+        "https://api.routebudget.com/api/assigncab/update-trip",
         formData,
         uploadConfig
       );
@@ -1112,7 +1112,7 @@ const TyrePunctureScreen: React.FC<TyrePunctureScreenProps> = ({ onClose }) => {
       "Choose an option",
       [
         { text: "Take Photo", onPress: openCamera },
-        { text: "Choose from Gallery", onPress: openGallery },
+        // { text: "Choose from Gallery", onPress: openGallery },
         { text: "Cancel", style: "cancel" }
       ],
       { cancelable: true }

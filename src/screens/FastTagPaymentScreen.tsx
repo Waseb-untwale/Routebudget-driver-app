@@ -687,7 +687,7 @@ const FastTagPaymentScreen: React.FC<FastTagPaymentScreenProps> = ({ onClose }) 
       const token = await AsyncStorage.getItem("userToken")
 
       if (token) {
-        const response = await axios.get("http://192.168.183.163:5000/api/assignCab/driver", {
+        const response = await axios.get("https://api.routebudget.com/api/assignCab/driver", {
           headers: { Authorization: `Bearer ${token}` },
         })
 
@@ -739,15 +739,19 @@ const FastTagPaymentScreen: React.FC<FastTagPaymentScreenProps> = ({ onClose }) 
       setIsSubmitting(true)
 
       const formData = new FormData()
+      
+      // Only append the data once - choose the format your backend expects
+      // Option 1: Send as JSON object (recommended)
       const fastTagData = {
         amount: Number.parseFloat(fastTag.amount),
         paymentMode: fastTag.paymentMode,
         timestamp: new Date().toISOString(),
       }
-
       formData.append("fastTag", JSON.stringify(fastTagData))
-      formData.append("fastTagAmount", fastTag.amount)
-      formData.append("fastTagPaymentMode", fastTag.paymentMode)
+
+      // Option 2: Or send as separate fields (uncomment if your backend expects this format)
+      // formData.append("fastTagAmount", fastTag.amount)
+      // formData.append("fastTagPaymentMode", fastTag.paymentMode)
 
       const token = await AsyncStorage.getItem("userToken")
 
@@ -760,7 +764,7 @@ const FastTagPaymentScreen: React.FC<FastTagPaymentScreenProps> = ({ onClose }) 
           },
         }
 
-        const res = await axios.patch("http://192.168.183.163:5000/api/assigncab/update-trip", formData, uploadConfig)
+        const res = await axios.patch("https://api.routebudget.com/api/assigncab/update-trip", formData, uploadConfig)
 
         if (res.status === 200 || res.status === 201) {
           Alert.alert("Success", "FastTag payment submitted successfully!", [
@@ -843,9 +847,6 @@ const FastTagPaymentScreen: React.FC<FastTagPaymentScreenProps> = ({ onClose }) 
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       {/* Main FastTag Card */}
       <View style={styles.fastTagCard}>
-        {/* Card Header */}
-       
-
         {/* Payment Mode Selection */}
         <View style={styles.inputSection}>
           <Text style={styles.inputLabel}>Payment Mode <Text style={styles.required}>*</Text></Text>

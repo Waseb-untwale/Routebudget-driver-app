@@ -55,7 +55,7 @@ const LocationScreen = ({ onClose }) => {
   const debounceTimeoutRef = useRef(null) // Add this ref
   const isTypingRef = useRef(false) // Add this ref to track typing state
 
-  const SERVER_URL = "http://192.168.183.163:5000"
+  const SERVER_URL = "https://api.routebudget.com"
   const WS_URL = "ws://192.168.183.163:5000"
 
   const getCacheKey = (query) => `${CACHE_KEY}_${query.toLowerCase().trim()}`

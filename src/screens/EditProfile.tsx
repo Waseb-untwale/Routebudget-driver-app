@@ -189,7 +189,7 @@ const EditProfile: React.FC<Props> = ({ navigation }) => {
       if (profileData.vehicleNo) payload.vehicleNo = profileData.vehicleNo;
 
       const response = await axios.put(
-        "http://192.168.183.163:5000/api/assignCab/profile",
+        "https://api.routebudget.com/api/assignCab/profile",
         payload,
         {
           headers: {

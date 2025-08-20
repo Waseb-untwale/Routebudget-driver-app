@@ -749,7 +749,6 @@
 // export default ReportProblemScreen;
 
 
-
 "use client"
 
 import AsyncStorage from "@react-native-async-storage/async-storage"
@@ -851,7 +850,7 @@ const ReportProblemScreen: React.FC<ReportProblemScreenProps> = ({ onClose, navi
       const token = await AsyncStorage.getItem("userToken")
 
       if (token) {
-        const response = await axios.get("http://192.168.183.163:5000/api/assignCab/driver", {
+        const response = await axios.get("https://api.routebudget.com/api/assignCab/driver", {
           headers: { Authorization: `Bearer ${token}` },
         })
 
@@ -896,13 +895,17 @@ const ReportProblemScreen: React.FC<ReportProblemScreenProps> = ({ onClose, navi
     try {
       const formData = new FormData()
 
+      // Only append the data once - choose the format your backend expects
+      // Option 1: Send as JSON object (recommended)
       const otherProblemsData = {
         amount: otherProblems.amount,
         details: otherProblems.details,
       }
       formData.append("otherProblems", JSON.stringify(otherProblemsData))
-      formData.append("otherAmount", otherProblems.amount)
-      formData.append("otherDetails", otherProblems.details)
+
+      // Option 2: Or send as separate fields (uncomment if your backend expects this format)
+      // formData.append("otherAmount", otherProblems.amount)
+      // formData.append("otherDetails", otherProblems.details)
 
       if (uploadedImage) {
         formData.append("otherProblemsImage", {
@@ -914,7 +917,7 @@ const ReportProblemScreen: React.FC<ReportProblemScreenProps> = ({ onClose, navi
 
       const token = await AsyncStorage.getItem("userToken")
 
-      const res = await axios.patch("http://192.168.183.163:5000/api/assigncab/update-trip", formData, {
+      const res = await axios.patch("https://api.routebudget.com/api/assigncab/update-trip", formData, {
         headers: {
           "Content-Type": "multipart/form-data",
           Authorization: `Bearer ${token}`,
@@ -1168,4 +1171,5 @@ const styles = StyleSheet.create({
     marginLeft: 6,
   },
 })
-export default  ReportProblemScreen
+
+export default ReportProblemScreen
